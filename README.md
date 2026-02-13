@@ -4,12 +4,17 @@ Interactive HTML UIs rendered inside AI chat via [MCP Apps](https://modelcontext
 
 ## Screenshots
 
-### ⏰ Clock App
+### 🔧 MCP Server Interaction (Before → Rendering)
+The server handles JSON-RPC calls and returns both structured data AND interactive HTML:
+
+![MCP Interaction](screenshots/mcp-interaction.png)
+
+### ⏰ Clock App (Rendered UI)
 Real-time interactive clock with timezone display and server time fetching.
 
 ![Clock App](screenshots/clock-app.png)
 
-### 📊 System Dashboard
+### 📊 System Dashboard (Rendered UI)
 Live system metrics dashboard with CPU, memory, uptime stats and weekly traffic charts.
 
 ![Dashboard](screenshots/dashboard.png)
