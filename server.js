@@ -233,10 +233,13 @@ const dashboardResourceUri = "ui://dashboard/dashboard.html";
 // Tool: get-time with interactive clock UI
 server.tool(
   "get-time",
-  "Shows an interactive clock with current time. Returns server time.",
+  "Shows an interactive clock with current time. Returns both server time and a rich interactive clock UI.",
   {},
   async () => ({
-    content: [{ type: "text", text: new Date().toISOString() }],
+    content: [
+      { type: "text", text: `Current server time: ${new Date().toISOString()}` },
+      { type: "resource", resource: { uri: clockResourceUri, mimeType: RESOURCE_MIME_TYPE, text: clockHtml } }
+    ],
   })
 );
 
@@ -246,12 +249,15 @@ server.tool(
   "Shows an interactive system metrics dashboard with CPU, memory, and traffic data.",
   {},
   async () => ({
-    content: [{ type: "text", text: JSON.stringify({
-      cpu: Math.floor(Math.random() * 60 + 20) + "%",
-      memory: Math.floor(Math.random() * 40 + 40) + "%",
-      uptime: Math.floor(process.uptime()) + "s",
-      timestamp: new Date().toISOString()
-    }) }],
+    content: [
+      { type: "text", text: JSON.stringify({
+        cpu: Math.floor(Math.random() * 60 + 20) + "%",
+        memory: Math.floor(Math.random() * 40 + 40) + "%",
+        uptime: Math.floor(process.uptime()) + "s",
+        timestamp: new Date().toISOString()
+      }) },
+      { type: "resource", resource: { uri: dashboardResourceUri, mimeType: RESOURCE_MIME_TYPE, text: dashboardHtml } }
+    ],
   })
 );
 
