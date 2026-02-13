@@ -60,17 +60,104 @@ Ask Claude: *"What time is it?"* or *"Show me the system dashboard"*
 
 ## How It Works
 
-The server uses `@modelcontextprotocol/sdk` with the `@modelcontextprotocol/ext-apps` extension. Each tool returns an `app` content block containing inline HTML/CSS/JS that the client renders in an iframe.
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Claude Desktop                         │
+│                                                             │
+│  ┌──────────┐    ┌───────────┐    ┌──────────────────────┐  │
+│  │   User   │───▶│  Claude   │───▶│   MCP Client         │  │
+│  │  "What   │    │  (LLM)    │    │   (JSON-RPC over     │  │
+│  │  time?"  │    │           │    │    stdio)             │  │
+│  └──────────┘    └───────────┘    └──────────┬───────────┘  │
+│                                              │              │
+│                                     JSON-RPC │ request      │
+│                                   tools/call │              │
+│                                              ▼              │
+│                                  ┌───────────────────────┐  │
+│                                  │   MCP Server          │  │
+│                                  │   (server.js)         │  │
+│                                  │                       │  │
+│                                  │  tool("get-time")     │  │
+│                                  │  tool("show-dashboard")│  │
+│                                  └──────────┬────────────┘  │
+│                                             │               │
+│                                    response │               │
+│                                  ┌──────────┴────────────┐  │
+│                                  │  content: [           │  │
+│                                  │   { type: "text" },   │  │
+│                                  │   { type: "resource", │  │
+│                                  │     mimeType: "text/  │  │
+│                                  │     html", ... }      │  │
+│                                  │  ]                    │  │
+│                                  └──────────┬────────────┘  │
+│                                             │               │
+│                                             ▼               │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │            Chat UI (iframe sandbox)                  │   │
+│  │  ┌────────────────────┐  ┌────────────────────────┐  │   │
+│  │  │   ⏰ Clock App     │  │  📊 Dashboard App      │  │   │
+│  │  │                    │  │                        │  │   │
+│  │  │  14:32:05          │  │  CPU: 45%  MEM: 62%   │  │   │
+│  │  │  Thursday,         │  │  ▃▅▇▂▆▄▅             │  │   │
+│  │  │  Feb 13, 2026      │  │  Traffic (7 days)     │  │   │
+│  │  │                    │  │                        │  │   │
+│  │  │  [📡 Server Time]  │  │  Requests/s: 230      │  │   │
+│  │  └────────────────────┘  └────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Flow
+
+```
+1. User asks a question          "What time is it?"
+         │
+         ▼
+2. LLM picks the right tool      get-time / show-dashboard
+         │
+         ▼
+3. MCP Client calls server       JSON-RPC → stdio → server.js
+         │
+         ▼
+4. Server returns content        text (data) + resource (HTML)
+         │
+         ▼
+5. Client renders HTML           Interactive UI in chat iframe
+         │
+         ▼
+6. User interacts with UI        Clicks buttons, sees live data
+         │
+         ▼
+7. UI calls back to server       ext-apps SDK → callServerTool()
+   (optional, bidirectional)
+```
+
+### Key Concept
+
+Traditional MCP tools return **plain text**. MCP Apps adds the ability to return **interactive HTML** alongside text — the client renders it in a sandboxed iframe directly in the chat.
+
+The HTML app can also **call back** to the MCP server via `@modelcontextprotocol/ext-apps`, enabling true bidirectional interaction (e.g., clicking "Get Server Time" in the clock app triggers a new tool call).
 
 ```js
-server.tool("get-time", "Get current time with interactive clock UI", {}, async () => {
-  return {
-    content: [{
-      type: "app",
-      html: `<html><!-- interactive clock UI --></html>`
-    }]
-  };
-});
+// Server: return HTML UI alongside text
+server.tool("get-time", "Interactive clock", {}, async () => ({
+  content: [
+    { type: "text", text: `Server time: ${new Date().toISOString()}` },
+    { type: "resource", resource: {
+      uri: "ui://clock/clock.html",
+      mimeType: "text/html",
+      text: `<html><!-- interactive clock --></html>`
+    }}
+  ],
+}));
+
+// Client (in HTML): call back to server
+import { App } from "https://esm.sh/@modelcontextprotocol/ext-apps";
+const app = new App({ name: "Clock" });
+await app.connect();
+await app.callServerTool({ name: "get-time", arguments: {} });
 ```
 
 ## Preview
