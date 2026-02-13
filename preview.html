@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MCP Apps Demo Preview</title>
+<style>
+body { margin: 0; font-family: system-ui; background: #111; }
+.tabs { display: flex; gap: 2px; background: #222; padding: 10px 10px 0; }
+.tab { padding: 10px 24px; background: #333; color: #aaa; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; }
+.tab.active { background: #444; color: white; }
+iframe { width: 100%; height: calc(100vh - 50px); border: none; }
+</style>
+</head>
+<body>
+<div class="tabs">
+  <button class="tab active" onclick="show('clock',this)">🕐 Clock App</button>
+  <button class="tab" onclick="show('dash',this)">📊 Dashboard</button>
+</div>
+<iframe id="frame"></iframe>
+<script>
+const clock = `<!DOCTYPE html>
+<html><head><style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; padding: 20px; }
+.clock { font-size: 48px; font-weight: 700; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); margin-bottom: 10px; }
+.date { font-size: 18px; opacity: 0.9; margin-bottom: 20px; }
+.timezone { font-size: 14px; opacity: 0.7; background: rgba(255,255,255,0.15); padding: 6px 16px; border-radius: 20px; margin-bottom: 20px; }
+button { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 10px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+button:hover { background: rgba(255,255,255,0.3); border-color: white; }
+.server-time { margin-top: 15px; font-size: 14px; opacity: 0.8; }
+</style></head><body>
+<div class="clock" id="clock">--:--:--</div>
+<div class="date" id="date">Loading...</div>
+<div class="timezone" id="tz">🌏 Detecting...</div>
+<button onclick="document.getElementById('serverTime').textContent='📡 Server: '+new Date().toISOString()">📡 Get Server Time</button>
+<div class="server-time" id="serverTime"></div>
+<script>
+function u(){var n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString();document.getElementById('date').textContent=n.toLocaleDateString('en-AU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});document.getElementById('tz').textContent='🌏 '+Intl.DateTimeFormat().resolvedOptions().timeZone;}u();setInterval(u,1000);
+<\/script></body></html>`;
+
+const dash = `<!DOCTYPE html>
+<html><head><style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: white; padding: 20px; min-height: 400px; }
+h2 { margin-bottom: 20px; color: #e94560; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: center; }
+.card .value { font-size: 32px; font-weight: 700; background: linear-gradient(135deg, #e94560, #0f3460); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.card .label { font-size: 12px; opacity: 0.6; margin-top: 5px; text-transform: uppercase; }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 10px 0; }
+.bar { flex: 1; background: linear-gradient(to top, #e94560, #0f3460); border-radius: 4px 4px 0 0; min-width: 30px; position: relative; transition: height 0.5s; }
+.bar-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; opacity: 0.6; }
+</style></head><body>
+<h2>📊 System Dashboard</h2>
+<div class="grid">
+<div class="card"><div class="value" id="cpu">--</div><div class="label">CPU Usage</div></div>
+<div class="card"><div class="value" id="mem">--</div><div class="label">Memory</div></div>
+<div class="card"><div class="value" id="uptime">--</div><div class="label">Uptime (h)</div></div>
+<div class="card"><div class="value" id="requests">--</div><div class="label">Requests/s</div></div>
+</div>
+<h3 style="margin-bottom:10px;opacity:0.7">Traffic (last 7 days)</h3>
+<div class="bar-chart" id="chart"></div>
+<script>
+function r(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function u(){document.getElementById('cpu').textContent=r(20,85)+'%';document.getElementById('mem').textContent=r(40,75)+'%';document.getElementById('uptime').textContent=r(100,999);document.getElementById('requests').textContent=r(50,500);}
+var days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],ch=document.getElementById('chart');
+days.forEach(function(d){ch.innerHTML+='<div class="bar" style="height:'+r(20,100)+'%"><span class="bar-label">'+d+'</span></div>';});
+u();setInterval(u,3000);
+<\/script></body></html>`;
+
+function show(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('frame').srcdoc = id === 'clock' ? clock : dash;
+}
+show('clock', document.querySelector('.tab'));
+</script>
+</body>
+</html>
